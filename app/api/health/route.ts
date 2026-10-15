@@ -18,7 +18,12 @@ export async function GET(request: Request) {
   const checkTimestamp = Date.now();
   const uptimeSeconds = Math.floor((checkTimestamp - startTime) / 1000);
 
-  const ltaApiKeyConfigured = Boolean(process.env.LTA_ACCOUNT_KEY);
+  const accountKey =
+    process.env.LTA_ACCOUNT_KEY ||
+    process.env.LTA_API_KEY ||
+    process.env.ACCOUNT_KEY ||
+    '';
+  const ltaApiKeyConfigured = Boolean(accountKey);
 
   let upstreamStatus: 'CONNECTED' | 'SANDBOX_SIMULATED' | 'ERROR' = 'SANDBOX_SIMULATED';
   let upstreamLatencyMs = 0;
@@ -28,10 +33,10 @@ export async function GET(request: Request) {
     const pingStart = Date.now();
     try {
       const pingRes = await fetch(
-        'http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode=09048',
+        'https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival?BusStopCode=09048',
         {
           headers: {
-            AccountKey: process.env.LTA_ACCOUNT_KEY!,
+            AccountKey: accountKey,
             accept: 'application/json',
           },
           signal: AbortSignal.timeout(5000),

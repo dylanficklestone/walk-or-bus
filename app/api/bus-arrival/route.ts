@@ -63,11 +63,11 @@ export async function GET(request: Request) {
       });
     }
 
-    // 3. Upstream LTA DataMall Fetch
-    const ltaApiKey = process.env.LTA_ACCOUNT_KEY;
+    // 3. Upstream LTA DataMall v3 Fetch
+    const ltaApiKey = process.env.LTA_ACCOUNT_KEY || process.env.LTA_API_KEY || process.env.ACCOUNT_KEY;
 
     if (ltaApiKey) {
-      const upstreamUrl = new URL('http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2');
+      const upstreamUrl = new URL('https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival');
       upstreamUrl.searchParams.set('BusStopCode', busStopCode);
       if (serviceNo) {
         upstreamUrl.searchParams.set('ServiceNo', serviceNo);

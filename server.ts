@@ -108,9 +108,9 @@ app.get('/api/health', async (_req: Request, res: Response) => {
 });
 
 /**
- * Proxy route for Singapore LTA DataMall BusArrivalv2
+ * Proxy route for Singapore LTA DataMall BusArrival (supports both /api/busarrival and /api/bus-arrival)
  */
-app.get('/api/bus-arrival', async (req: Request, res: Response) => {
+app.get(['/api/bus-arrival', '/api/busarrival'], async (req: Request, res: Response) => {
   try {
     const busStopCode = String(req.query.BusStopCode || '').trim();
     const serviceNo = String(req.query.ServiceNo || '').trim();
@@ -137,10 +137,10 @@ app.get('/api/bus-arrival', async (req: Request, res: Response) => {
       return res.json(cached.data);
     }
 
-    const ltaApiKey = process.env.LTA_ACCOUNT_KEY;
+    const ltaApiKey = process.env.LTA_ACCOUNT_KEY || process.env.LTA_API_KEY || process.env.ACCOUNT_KEY;
 
     if (ltaApiKey) {
-      const upstreamUrl = new URL('http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2');
+      const upstreamUrl = new URL('https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival');
       upstreamUrl.searchParams.set('BusStopCode', busStopCode);
       if (serviceNo) {
         upstreamUrl.searchParams.set('ServiceNo', serviceNo);
