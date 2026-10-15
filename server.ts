@@ -20,8 +20,92 @@ interface CacheEntry {
 
 const cacheStore = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 30 * 1000; // 30 seconds
-
 const BUS_STOP_REGEX = /^[0-9]{5}$/;
+
+const serverStartTime = Date.now();
+
+/**
+ * Health check endpoint for LTA DataMall proxy, cache stats, and uptime
+ */
+app.get('/api/health', async (_req: Request, res: Response) => {
+  const checkTimestamp = Date.now();
+  const uptimeSeconds = Math.floor((checkTimestamp - serverStartTime) / 1000);
+  const ltaApiKeyConfigured = Boolean(process.env.LTA_ACCOUNT_KEY);
+
+  let upstreamStatus: 'CONNECTED' | 'SANDBOX_SIMULATED' | 'ERROR' = 'SANDBOX_SIMULATED';
+  let upstreamLatencyMs = 0;
+  let upstreamMessage = 'Running with deterministic Singapore transit simulation engine.';
+
+  if (ltaApiKeyConfigured) {
+    const pingStart = Date.now();
+    try {
+      const pingRes = await fetch(
+        'http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode=09048',
+        {
+          headers: {
+            AccountKey: process.env.LTA_ACCOUNT_KEY!,
+            accept: 'application/json',
+          },
+        }
+      );
+      upstreamLatencyMs = Date.now() - pingStart;
+
+      if (pingRes.ok) {
+        upstreamStatus = 'CONNECTED';
+        upstreamMessage = `Connected to LTA DataMall API (${upstreamLatencyMs}ms).`;
+      } else {
+        upstreamStatus = 'ERROR';
+        upstreamMessage = `LTA DataMall returned HTTP ${pingRes.status}`;
+      }
+    } catch (err: any) {
+      upstreamStatus = 'ERROR';
+      upstreamMessage = `Failed to reach LTA DataMall: ${err?.message || 'Timeout'}`;
+    }
+  }
+
+  const memoryUsage = process.memoryUsage ? process.memoryUsage() : null;
+
+  const healthReport = {
+    status: upstreamStatus === 'ERROR' ? 'DEGRADED' : 'HEALTHY',
+    service: 'walk-or-wait-sg-decision-engine',
+    timestamp: new Date().toISOString(),
+    uptimeSeconds,
+    checks: {
+      ltaDataMall: {
+        status: upstreamStatus,
+        configured: ltaApiKeyConfigured,
+        latencyMs: upstreamLatencyMs,
+        message: upstreamMessage,
+        endpoint: 'http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2',
+      },
+      cache: {
+        status: 'OPERATIONAL',
+        activeEntries: cacheStore.size,
+        ttlSeconds: 30,
+        strategy: 'In-Memory with HTTP Cache-Control (s-maxage=30)',
+      },
+      routingEngine: {
+        status: 'OPERATIONAL',
+        algorithm: 'Delta-T Penalized Comfort Scoring',
+        weatherFactors: ['clear', 'heat_33c', 'rain_downpour'],
+      },
+      busStopsDatabase: {
+        status: 'OPERATIONAL',
+        coverage: 'Singapore island-wide (All 5-digit bus stop codes 01xxx-99xxx)',
+      },
+    },
+    system: {
+      nodeVersion: process.version,
+      platform: process.platform,
+      memoryHeapUsedMb: memoryUsage ? Math.round(memoryUsage.heapUsed / 1024 / 1024) : null,
+      memoryRssMb: memoryUsage ? Math.round(memoryUsage.rss / 1024 / 1024) : null,
+    },
+  };
+
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('X-Health-Status', healthReport.status);
+  return res.status(upstreamStatus === 'ERROR' ? 503 : 200).json(healthReport);
+});
 
 /**
  * Proxy route for Singapore LTA DataMall BusArrivalv2

@@ -8,6 +8,10 @@ import {
   WalkSettings,
 } from '../types/transit';
 import {
+  ALL_SINGAPORE_BUS_STOPS,
+  resolveAnySingaporeBusStop,
+} from '../data/singaporeBusStopsFull';
+import {
   SINGAPORE_BUS_STOPS,
   findClosestBusStop,
 } from '../data/singaporeBusData';
@@ -20,13 +24,17 @@ import {
 const REFRESH_INTERVAL_SECONDS = 30;
 
 export function useWalkOrWait(initialStopCode: string = '09048') {
-  // Current bus stop
+  // Current bus stop (resolves any 5-digit code in Singapore)
   const [currentStop, setCurrentStop] = useState<BusStop>(() => {
-    return (
-      SINGAPORE_BUS_STOPS.find((s) => s.code === initialStopCode) ||
-      SINGAPORE_BUS_STOPS[0]
-    );
+    return resolveAnySingaporeBusStop(initialStopCode);
   });
+
+  const selectStopByCode = useCallback((code: string) => {
+    const resolved = resolveAnySingaporeBusStop(code);
+    setCurrentStop(resolved);
+    setSelectedDestinationIndex(0);
+    setSelectedServiceNo('');
+  }, []);
 
   // Destination / hop target index (e.g. 0 = 1 stop away, 1 = 2 stops away)
   const [selectedDestinationIndex, setSelectedDestinationIndex] = useState<number>(0);
@@ -242,6 +250,7 @@ export function useWalkOrWait(initialStopCode: string = '09048') {
   return {
     currentStop,
     setCurrentStop,
+    selectStopByCode,
     selectedDestinationIndex,
     setSelectedDestinationIndex,
     currentDestination,

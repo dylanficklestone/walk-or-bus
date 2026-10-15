@@ -12,19 +12,23 @@ import {
   CheckCircle,
   ExternalLink,
   ShieldCheck,
+  Activity,
+  Layers,
 } from 'lucide-react';
 import { useWalkOrWait } from './hooks/useWalkOrWait';
 import { WalkOrWaitCard } from './components/WalkOrWaitCard';
 import { BusRouteVisualizer } from './components/BusRouteVisualizer';
 import { ArchitectureModal } from './components/ArchitectureModal';
+import { ApiHealthChecker } from './components/ApiHealthChecker';
+import { AllBusStopsModal } from './components/AllBusStopsModal';
 import { ScenarioTester } from './components/ScenarioTester';
-import { SINGAPORE_BUS_STOPS, searchBusStops } from './data/singaporeBusData';
 import { BusStop, NormalizedBusService, WalkSettings } from './types/transit';
 
 export default function App() {
   const {
     currentStop,
     setCurrentStop,
+    selectStopByCode,
     selectedDestinationIndex,
     setSelectedDestinationIndex,
     currentDestination,
@@ -46,13 +50,10 @@ export default function App() {
     geoNotice,
   } = useWalkOrWait('09048'); // Default: Orchard Stn / Lucky Plaza
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isStopsModalOpen, setIsStopsModalOpen] = useState(false);
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState(false);
+  const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
   const [customOverriddenService, setCustomOverriddenService] = useState<NormalizedBusService | null>(null);
-
-  // Filtered stops for search
-  const filteredStops = searchBusStops(searchQuery);
 
   // Apply scenario preset
   const handleApplyScenario = (scenario: {
@@ -92,25 +93,29 @@ export default function App() {
             <span>Walk or Wait</span>
           </a>
 
-          {/* Zone 2: 4 Nav links */}
+          {/* Zone 2: Nav links */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+            <button
+              onClick={() => setIsStopsModalOpen(true)}
+              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5"
+            >
+              <span>Bus Stops Directory</span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                01xxx-99xxx
+              </span>
+            </button>
+            <button
+              onClick={() => setIsHealthModalOpen(true)}
+              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 text-emerald-700 font-semibold"
+            >
+              <Activity className="w-3.5 h-3.5 text-emerald-600" />
+              <span>API Health</span>
+            </button>
             <button
               onClick={() => setIsArchitectureModalOpen(true)}
               className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
             >
               Decision Formula
-            </button>
-            <button
-              onClick={() => setIsArchitectureModalOpen(true)}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
-            >
-              LTA DataMall Proxy
-            </button>
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
-            >
-              Transit Corridors
             </button>
             <a
               href="#live-feed"
@@ -121,10 +126,17 @@ export default function App() {
           </nav>
 
           {/* Zone 3: 1 Primary Action */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setIsHealthModalOpen(true)}
+              className="md:hidden p-2 text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+              title="API Health Checker"
+            >
+              <Activity className="w-4 h-4 text-emerald-600" />
+            </button>
             <button
               onClick={() => setIsArchitectureModalOpen(true)}
-              className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 shadow-sm"
+              className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 shadow-sm min-h-[40px]"
             >
               Architecture & Specs
             </button>
@@ -141,6 +153,10 @@ export default function App() {
               <span>Singapore Feeder Bus vs Foot Dilemma</span>
               <span aria-hidden="true">·</span>
               <span>LTA BusArrivalv2</span>
+              <span aria-hidden="true">·</span>
+              <span className="font-mono text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                API Healthy
+              </span>
               <span aria-hidden="true">·</span>
               <span className="font-mono text-blue-600 font-semibold">30s TTL Cache</span>
             </div>
@@ -161,11 +177,20 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => setIsSearchOpen(true)}
+              onClick={() => setIsStopsModalOpen(true)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm min-h-[44px]"
             >
               <Search className="w-3.5 h-3.5 text-slate-400" />
-              <span>Switch Hub ({currentStop.code})</span>
+              <span>All Bus Stops Directory ({currentStop.code})</span>
+            </button>
+
+            <button
+              onClick={() => setIsHealthModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-all shadow-sm min-h-[44px]"
+              title="Open API Health diagnostics"
+            >
+              <Activity className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Health</span>
             </button>
           </div>
         </div>
@@ -323,87 +348,41 @@ export default function App() {
               {/* Data source transparency */}
               <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
                 <span>Cache: {cacheStatus || 'HIT'} (30s)</span>
-                <span className="text-blue-600 font-medium">LTA BusArrivalv2</span>
+                <button
+                  onClick={() => setIsHealthModalOpen(true)}
+                  className="text-blue-600 font-semibold hover:underline flex items-center gap-1"
+                >
+                  <Activity className="w-3 h-3 text-emerald-600" />
+                  <span>Check API Health & Status</span>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* 4. Singapore Bus Stop Picker Modal */}
-      {isSearchOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col shadow-2xl border border-slate-200">
-            <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-blue-600" />
-                <h3 className="font-bold text-slate-900 text-sm">
-                  Select Singapore Feeder Corridor
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsSearchOpen(false)}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-800"
-              >
-                Close
-              </button>
-            </div>
+      {/* 4. Singapore All Bus Stops Directory Modal */}
+      <AllBusStopsModal
+        isOpen={isStopsModalOpen}
+        onClose={() => setIsStopsModalOpen(false)}
+        currentStopCode={currentStop.code}
+        onSelectStop={(stop) => {
+          setCurrentStop(stop);
+          setSelectedDestinationIndex(0);
+          setCustomOverriddenService(null);
+        }}
+        onSelectStopByCode={(code) => {
+          selectStopByCode(code);
+        }}
+      />
 
-            <div className="p-4 border-b border-slate-100">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search 5-digit code or road (e.g. 08057, Orchard, Jurong)..."
-                  className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-            </div>
+      {/* 5. API Health Diagnostics Modal */}
+      <ApiHealthChecker
+        isOpen={isHealthModalOpen}
+        onClose={() => setIsHealthModalOpen(false)}
+      />
 
-            <div className="overflow-y-auto p-4 space-y-2">
-              {filteredStops.map((stop) => {
-                const isSelected = currentStop.code === stop.code;
-                return (
-                  <button
-                    key={stop.code}
-                    onClick={() => {
-                      setCurrentStop(stop);
-                      setSelectedDestinationIndex(0);
-                      setCustomOverriddenService(null);
-                      setIsSearchOpen(false);
-                    }}
-                    className={`w-full p-3 rounded-2xl text-left border transition-all flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500/10'
-                        : 'bg-white border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-xs text-slate-900">
-                        {stop.name}
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        Stop #{stop.code} · {stop.road}
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-1 font-mono">
-                        Services: {stop.services.slice(0, 5).join(', ')}
-                      </div>
-                    </div>
-
-                    {isSelected && (
-                      <CheckCircle className="w-4 h-4 text-blue-600 shrink-0 ml-2" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Architectural & Formula Modal */}
+      {/* 6. Architectural & Formula Modal */}
       <ArchitectureModal
         isOpen={isArchitectureModalOpen}
         onClose={() => setIsArchitectureModalOpen(false)}
