@@ -144,7 +144,7 @@ function sanitizeLTAData(raw: any, busStopCode: string) {
   });
 
   return {
-    'odata.metadata': raw?.['odata.metadata'] || 'http://datamall2.mytransport.sg/ltaodataservice/$metadata#BusArrivalv2/@Element',
+    'odata.metadata': raw?.['odata.metadata'] || 'https://datamall2.mytransport.sg/ltaodataservice/$metadata#BusArrivalv3/@Element',
     BusStopCode: busStopCode,
     Services: cleanServices,
   };
@@ -265,7 +265,7 @@ function generateSimulatedLTAArrivals(busStopCode: string, requestedServiceNo?: 
   });
 
   return {
-    'odata.metadata': 'http://datamall2.mytransport.sg/ltaodataservice/$metadata#BusArrivalv2/@Element',
+    'odata.metadata': 'https://datamall2.mytransport.sg/ltaodataservice/$metadata#BusArrivalv3/@Element',
     BusStopCode: busStopCode,
     Services: services,
   };

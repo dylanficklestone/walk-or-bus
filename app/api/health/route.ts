@@ -70,7 +70,7 @@ export async function GET(request: Request) {
         configured: ltaApiKeyConfigured,
         latencyMs: upstreamLatencyMs,
         message: upstreamMessage,
-        endpoint: 'http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2',
+        endpoint: 'https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival',
       },
       cache: {
         status: 'OPERATIONAL',

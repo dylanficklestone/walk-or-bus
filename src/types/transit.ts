@@ -1,5 +1,5 @@
 /**
- * Strict TypeScript types for Singapore LTA DataMall BusArrivalv2 API,
+ * Strict TypeScript types for Singapore LTA DataMall BusArrivalv3 API,
  * distance routing, and commuter decision engine.
  */
 
@@ -26,7 +26,7 @@ export type BusFeature = 'WAB' | '';
 export type BusType = 'SD' | 'DD' | 'BD';
 
 /**
- * Raw NextBus object schema from LTA DataMall BusArrivalv2
+ * Raw NextBus object schema from LTA DataMall BusArrivalv3
  */
 export interface LTANextBus {
   OriginCode: string;
@@ -41,7 +41,7 @@ export interface LTANextBus {
 }
 
 /**
- * Raw BusService schema from LTA DataMall BusArrivalv2
+ * Raw BusService schema from LTA DataMall BusArrivalv3
  */
 export interface LTABusService {
   ServiceNo: string;
@@ -52,7 +52,7 @@ export interface LTABusService {
 }
 
 /**
- * Root response payload from LTA DataMall BusArrivalv2
+ * Root response payload from LTA DataMall BusArrivalv3
  */
 export interface LTABusArrivalResponse {
   'odata.metadata': string;

@@ -152,7 +152,7 @@ export default function App() {
             <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
               <span>Singapore Feeder Bus vs Foot Dilemma</span>
               <span aria-hidden="true">·</span>
-              <span>LTA BusArrivalv2</span>
+              <span>LTA BusArrivalv3</span>
               <span aria-hidden="true">·</span>
               <span className="font-mono text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                 API Healthy

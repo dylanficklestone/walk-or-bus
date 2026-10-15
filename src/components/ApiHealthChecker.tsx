@@ -214,7 +214,7 @@ export const ApiHealthChecker: React.FC<ApiHealthCheckerProps> = ({ isOpen, onCl
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <div className="font-bold text-slate-900 text-sm">
-                    LTA DataMall BusArrivalv2 Upstream
+                    LTA DataMall BusArrivalv3 Upstream
                   </div>
                   <span
                     className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${

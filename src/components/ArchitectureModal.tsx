@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   }
 
   const upstreamRes = await fetch(
-    \`http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode=\${busStopCode}\`,
+    \`https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival?BusStopCode=\${busStopCode}\`,
     { headers: { AccountKey: process.env.LTA_ACCOUNT_KEY!, accept: 'application/json' } }
   );
   const data = await upstreamRes.json();

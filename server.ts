@@ -40,10 +40,10 @@ app.get('/api/health', async (_req: Request, res: Response) => {
     const pingStart = Date.now();
     try {
       const pingRes = await fetch(
-        'http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode=09048',
+        'https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival?BusStopCode=09048',
         {
           headers: {
-            AccountKey: process.env.LTA_ACCOUNT_KEY!,
+            AccountKey: process.env.LTA_ACCOUNT_KEY || process.env.LTA_API_KEY || process.env.ACCOUNT_KEY || '',
             accept: 'application/json',
           },
         }
@@ -52,14 +52,14 @@ app.get('/api/health', async (_req: Request, res: Response) => {
 
       if (pingRes.ok) {
         upstreamStatus = 'CONNECTED';
-        upstreamMessage = `Connected to LTA DataMall API (${upstreamLatencyMs}ms).`;
+        upstreamMessage = `Connected to LTA DataMall v3 API (${upstreamLatencyMs}ms).`;
       } else {
         upstreamStatus = 'ERROR';
-        upstreamMessage = `LTA DataMall returned HTTP ${pingRes.status}`;
+        upstreamMessage = `LTA DataMall v3 returned HTTP ${pingRes.status}`;
       }
     } catch (err: any) {
       upstreamStatus = 'ERROR';
-      upstreamMessage = `Failed to reach LTA DataMall: ${err?.message || 'Timeout'}`;
+      upstreamMessage = `Failed to reach LTA DataMall v3: ${err?.message || 'Timeout'}`;
     }
   }
 
@@ -76,7 +76,7 @@ app.get('/api/health', async (_req: Request, res: Response) => {
         configured: ltaApiKeyConfigured,
         latencyMs: upstreamLatencyMs,
         message: upstreamMessage,
-        endpoint: 'http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2',
+        endpoint: 'https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival',
       },
       cache: {
         status: 'OPERATIONAL',
@@ -195,7 +195,7 @@ function sanitizeLTAData(raw: any, busStopCode: string) {
   }));
 
   return {
-    'odata.metadata': raw?.['odata.metadata'] || 'http://datamall2.mytransport.sg/ltaodataservice/$metadata#BusArrivalv2/@Element',
+    'odata.metadata': raw?.['odata.metadata'] || 'https://datamall2.mytransport.sg/ltaodataservice/$metadata#BusArrivalv3/@Element',
     BusStopCode: busStopCode,
     Services: cleanServices,
   };
@@ -310,7 +310,7 @@ function generateSimulatedLTAArrivals(busStopCode: string, requestedServiceNo?: 
   });
 
   return {
-    'odata.metadata': 'http://datamall2.mytransport.sg/ltaodataservice/$metadata#BusArrivalv2/@Element',
+    'odata.metadata': 'https://datamall2.mytransport.sg/ltaodataservice/$metadata#BusArrivalv3/@Element',
     BusStopCode: busStopCode,
     Services: services,
   };
