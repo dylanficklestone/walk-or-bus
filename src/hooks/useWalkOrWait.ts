@@ -20,6 +20,7 @@ import {
   getBusTypeLabel,
   getLoadLabel,
 } from '../utils/decisionEngine';
+import { generateClientSimulatedArrivals } from '../utils/transitSimulator';
 
 const REFRESH_INTERVAL_SECONDS = 30;
 
@@ -126,7 +127,7 @@ export function useWalkOrWait(initialStopCode: string = '09048') {
   );
 
   /**
-   * Fetches bus arrivals from the backend reverse proxy
+   * Fetches bus arrivals from the backend reverse proxy with multi-route fallback
    */
   const fetchArrivals = useCallback(async (stopCode: string) => {
     if (abortControllerRef.current) {
@@ -139,9 +140,31 @@ export function useWalkOrWait(initialStopCode: string = '09048') {
     setError(null);
 
     try {
-      const res = await fetch(`/api/bus-arrival?BusStopCode=${encodeURIComponent(stopCode)}`, {
+      const cleanStop = stopCode.trim().padStart(5, '0').slice(-5);
+
+      // Attempt 1: Serverless endpoint /api/busarrival
+      let res = await fetch(`/api/busarrival?BusStopCode=${encodeURIComponent(cleanStop)}`, {
         signal: controller.signal,
       });
+
+      // Attempt 2: If 404, fallback to /api/bus-arrival alias
+      if (res.status === 404) {
+        res = await fetch(`/api/bus-arrival?BusStopCode=${encodeURIComponent(cleanStop)}`, {
+          signal: controller.signal,
+        });
+      }
+
+      // Attempt 3: If still 404 (e.g. running as purely static frontend or without serverless proxy)
+      if (res.status === 404) {
+        console.warn('API endpoint returned 404. Falling back to client-side transit simulation.');
+        const simulated = generateClientSimulatedArrivals(cleanStop);
+        const processed = processArrivalData(simulated);
+        setServices(processed);
+        setCacheStatus('SIMULATED');
+        setLastUpdated(new Date());
+        setCountdownSeconds(REFRESH_INTERVAL_SECONDS);
+        return;
+      }
 
       if (!res.ok) {
         throw new Error(`Failed to load arrivals (HTTP ${res.status})`);
@@ -157,7 +180,13 @@ export function useWalkOrWait(initialStopCode: string = '09048') {
       setCountdownSeconds(REFRESH_INTERVAL_SECONDS);
     } catch (err: any) {
       if (err.name !== 'AbortError') {
-        setError(err.message || 'Unable to load real-time bus arrivals');
+        // Even on general fetch failure, provide client fallback
+        console.warn('Bus arrival fetch error, activating simulation:', err);
+        const cleanStop = stopCode.trim().padStart(5, '0').slice(-5);
+        const fallback = generateClientSimulatedArrivals(cleanStop);
+        const processed = processArrivalData(fallback);
+        setServices(processed);
+        setCacheStatus('SIMULATED');
       }
     } finally {
       setIsLoading(false);
