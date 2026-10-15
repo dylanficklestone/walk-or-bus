@@ -1,0 +1,6 @@
+{
+  "name": "Should I Walk or Wait? — Singapore Commuter Engine",
+  "description": "Real-time micro-decision utility comparing walking vs feeder bus in Singapore using LTA DataMall BusArrivalv2, weather penalties, and bus load factors.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
